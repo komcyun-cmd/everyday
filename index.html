@@ -4,49 +4,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Daily Dashboard</title>
+    <title>AI Daily Insights - 당신의 스마트한 하루</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             padding: 0;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            width: 480px;
-            min-height: 600px;
             background-color: #f8fafc;
-            overflow: hidden;
+            color: #1e293b;
         }
         #root { 
-            width: 480px;
-            height: 600px;
-            overflow-y: auto;
-            overflow-x: hidden;
+            min-height: 100vh;
         }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        /* 스크롤바 디자인 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
     </style>
 <script type="importmap">
 {
   "imports": {
     "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0"
   }
 }
 </script>
 </head>
 <body>
-    <div id="root">
-        <div class="flex items-center justify-center h-full text-slate-400 p-10 text-center">
-            <div>
-                <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p class="text-sm font-medium">대시보드를 로드하는 중입니다...<br><span class="text-xs opacity-50">빌드된 스크립트가 필요합니다.</span></p>
-            </div>
-        </div>
-    </div>
-    <!-- importmap 대신 index.tsx 내부에서 직접 URL을 사용하도록 변경하거나, 빌드 도구를 사용해야 합니다. -->
+    <div id="root"></div>
     <script type="module" src="index.tsx"></script>
 </body>
 </html>

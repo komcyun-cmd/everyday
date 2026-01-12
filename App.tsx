@@ -9,7 +9,8 @@ import {
   StickyNoteIcon, 
   TargetIcon, 
   RefreshCwIcon,
-  AlertCircleIcon
+  AlertCircleIcon,
+  LayoutDashboardIcon
 } from 'https://esm.sh/lucide-react@0.446.0';
 
 const App: React.FC = () => {
@@ -52,7 +53,7 @@ const App: React.FC = () => {
             setHistory(data.history || null);
             setLoading(false);
           },
-          { timeout: 5000 }
+          { timeout: 8000 }
         );
       } else {
         const data = await getDailyInsight();
@@ -62,7 +63,7 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError("AI 데이터를 가져오는 데 실패했습니다.");
+      setError("AI 브레인에 접속하는 중 오류가 발생했습니다.");
       setLoading(false);
     }
   }, []);
@@ -120,57 +121,82 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
-      <header className="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0 shadow-sm z-10">
-        <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <div className="w-7 h-7 bg-blue-600 rounded flex items-center justify-center">
-            <CalendarIcon className="w-4 h-4 text-white" />
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Desktop Sidebar / Mobile Nav */}
+      <aside className="w-full md:w-64 bg-white border-r border-slate-200 shrink-0 z-20">
+        <div className="p-6 flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+            <LayoutDashboardIcon className="w-6 h-6 text-white" />
           </div>
-          AI Dashboard
-        </h1>
-        <button onClick={refreshAI} disabled={loading} className="p-1.5 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50">
-          <RefreshCwIcon className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
-        </button>
-      </header>
+          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Daily AI</h1>
+        </div>
 
-      <main className="flex-1 overflow-y-auto p-4">
-        {error ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <AlertCircleIcon className="w-10 h-10 text-red-400 mb-2" />
-            <p className="text-slate-600 text-sm font-medium">{error}</p>
-            <button onClick={refreshAI} className="mt-4 text-blue-600 text-sm font-bold">다시 시도</button>
-          </div>
-        ) : loading ? (
-          <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-            <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-            <p className="text-xs animate-pulse">AI가 데이터를 분석하고 있습니다...</p>
-          </div>
-        ) : (
-          <Dashboard 
-            activeTab={activeTab}
-            weather={weather}
-            quote={quote}
-            history={history}
-            state={state}
-            actions={actions}
-          />
-        )}
+        <nav className="px-4 py-2 space-y-1">
+          <SidebarLink active={activeTab === 'home'} onClick={() => setActiveTab('home')} icon={<LayoutDashboardIcon />} label="대시보드" />
+          <SidebarLink active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} icon={<CalendarIcon />} label="내 일정" />
+          <SidebarLink active={activeTab === 'memo'} onClick={() => setActiveTab('memo')} icon={<StickyNoteIcon />} label="간편 메모" />
+          <SidebarLink active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon={<TargetIcon />} label="목표 추적" />
+        </nav>
+
+        <div className="mt-auto p-6 md:absolute md:bottom-0 md:w-64 border-t border-slate-100">
+          <button 
+            onClick={refreshAI} 
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl transition-all disabled:opacity-50"
+          >
+            <RefreshCwIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            AI 브리핑 새로고침
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto bg-[#f8fafc] p-4 md:p-8">
+        <div className="max-w-5xl mx-auto">
+          {error ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-sm border border-red-100">
+              <AlertCircleIcon className="w-16 h-16 text-red-400 mb-4" />
+              <h2 className="text-xl font-bold text-slate-800 mb-2">문제가 발생했습니다</h2>
+              <p className="text-slate-500 mb-6">{error}</p>
+              <button onClick={refreshAI} className="px-6 py-2 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors">다시 시도</button>
+            </div>
+          ) : loading ? (
+            <div className="flex flex-col items-center justify-center py-32">
+              <div className="relative">
+                <div className="w-20 h-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-blue-600 font-bold">AI</div>
+              </div>
+              <p className="mt-8 text-slate-500 font-medium animate-pulse text-lg text-center">
+                오늘의 통찰과 데이터를 불러오고 있습니다...
+              </p>
+            </div>
+          ) : (
+            <Dashboard 
+              activeTab={activeTab}
+              weather={weather}
+              quote={quote}
+              history={history}
+              state={state}
+              actions={actions}
+            />
+          )}
+        </div>
       </main>
-
-      <nav className="bg-white border-t flex items-center justify-around py-2 shrink-0 shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
-        <NavButton active={activeTab === 'home'} onClick={() => setActiveTab('home')} icon={<CloudIcon />} label="홈" />
-        <NavButton active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} icon={<CalendarIcon />} label="일정" />
-        <NavButton active={activeTab === 'memo'} onClick={() => setActiveTab('memo')} icon={<StickyNoteIcon />} label="메모" />
-        <NavButton active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon={<TargetIcon />} label="목표" />
-      </nav>
     </div>
   );
 };
 
-const NavButton: React.FC<{ active: boolean, onClick: () => void, icon: React.ReactElement, label: string }> = ({ active, onClick, icon, label }) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all px-3 py-1 rounded-lg ${active ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>
+const SidebarLink: React.FC<{ active: boolean, onClick: () => void, icon: React.ReactElement, label: string }> = ({ active, onClick, icon, label }) => (
+  <button 
+    onClick={onClick} 
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
+      active 
+        ? 'bg-blue-50 text-blue-600 shadow-sm' 
+        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+    }`}
+  >
     {React.cloneElement(icon as React.ReactElement<any>, { size: 20 })}
-    <span className="text-[10px] font-bold">{label}</span>
+    <span>{label}</span>
   </button>
 );
 
