@@ -2,7 +2,7 @@
 {
   "manifest_version": 3,
   "name": "Edge AI Daily Dashboard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI 기반 날씨, 명언, 역사 및 일정 관리 대시보드",
   "permissions": [
     "geolocation",
@@ -12,7 +12,8 @@
     "default_popup": "index.html",
     "default_title": "AI Daily Dashboard"
   },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self' 'unsafe-eval' https://cdn.tailwindcss.com https://esm.sh; object-src 'self'"
-  }
+  "host_permissions": [
+    "https://*.google.com/",
+    "https://esm.sh/"
+  ]
 }
