@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type } from "https://esm.sh/@google/genai@1.3.0";
 import { WeatherData, HistoryEvent, Quote } from "../types";
 
 export const getDailyInsight = async (lat?: number, lon?: number): Promise<{
@@ -7,10 +7,10 @@ export const getDailyInsight = async (lat?: number, lon?: number): Promise<{
   quote?: Quote;
   history?: HistoryEvent;
 }> => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = (window as any).process?.env?.API_KEY || "";
   
   if (!apiKey) {
-    console.error("API Key가 설정되지 않았습니다.");
+    console.warn("API Key가 설정되지 않았습니다.");
     return {};
   }
 
@@ -21,7 +21,7 @@ export const getDailyInsight = async (lat?: number, lon?: number): Promise<{
     const [quoteRes, historyRes] = await Promise.all([
       ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: "Give me one inspiring quote for today in Korean.",
+        contents: "오늘을 위한 짧고 영감을 주는 명언 하나를 한국어로 알려줘.",
         config: { 
           responseMimeType: "application/json",
           responseSchema: {
@@ -36,7 +36,7 @@ export const getDailyInsight = async (lat?: number, lon?: number): Promise<{
       }),
       ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `오늘(${dateStr})은 역사적으로 어떤 중요한 일이 있었나요? 한국어로 응답하세요.`,
+        contents: `오늘(${dateStr}) 역사적으로 중요한 사건 하나를 한국어로 알려줘.`,
         config: { 
           responseMimeType: "application/json",
           responseSchema: {
@@ -67,7 +67,7 @@ export const getDailyInsight = async (lat?: number, lon?: number): Promise<{
     if (lat && lon) {
       const weatherRes = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Current weather at latitude ${lat}, longitude ${lon}.`,
+        contents: `위도 ${lat}, 경도 ${lon} 지역의 현재 날씨 정보를 알려줘.`,
         config: { 
           responseMimeType: "application/json",
           responseSchema: {
@@ -84,18 +84,13 @@ export const getDailyInsight = async (lat?: number, lon?: number): Promise<{
       });
       try {
         const wText = weatherRes.text;
-        if (wText) {
-          weather = JSON.parse(wText);
-        }
+        if (wText) weather = JSON.parse(wText);
       } catch (e) { console.error("Weather parse error", e); }
     }
 
-    const qText = quoteRes.text;
-    const hText = historyRes.text;
-
     return {
-      quote: qText ? JSON.parse(qText) : undefined,
-      history: hText ? JSON.parse(hText) : undefined,
+      quote: quoteRes.text ? JSON.parse(quoteRes.text) : undefined,
+      history: historyRes.text ? JSON.parse(historyRes.text) : undefined,
       weather
     };
   } catch (error) {

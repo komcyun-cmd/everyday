@@ -12,7 +12,11 @@
     "default_popup": "index.html",
     "default_title": "AI Daily Dashboard"
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval' https://esm.sh; object-src 'self'"
+  },
   "host_permissions": [
-    "https://*.google.com/"
+    "https://*.google.com/",
+    "https://esm.sh/"
   ]
 }

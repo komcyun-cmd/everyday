@@ -1,21 +1,20 @@
 
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import React from 'https://esm.sh/react@19.0.0';
+import ReactDOM from 'https://esm.sh/react-dom@19.0.0/client';
 import App from './App';
 
-// 확장 프로그램 환경에서의 CSP 위반을 방지하기 위해 인라인이 아닌 모듈 내부에서 process 설정
-if (typeof (window as any).process === 'undefined') {
-  (window as any).process = { env: { API_KEY: (process.env as any).API_KEY || "" } };
+// 확장 프로그램 환경에서 process 객체 모킹
+const win = window as any;
+if (typeof win.process === 'undefined') {
+  win.process = { env: { API_KEY: "" } };
 }
 
 const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
+if (rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
 }
-
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);

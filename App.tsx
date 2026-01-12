@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'https://esm.sh/react@19.0.0';
 import { getDailyInsight } from './services/geminiService';
 import { AppState, WeatherData, Quote, HistoryEvent, ScheduleItem, Memo, Goal, Recurrence } from './types';
 import Dashboard from './components/Dashboard';
@@ -10,7 +10,7 @@ import {
   TargetIcon, 
   RefreshCwIcon,
   AlertCircleIcon
-} from 'lucide-react';
+} from 'https://esm.sh/lucide-react@0.446.0';
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -47,10 +47,12 @@ const App: React.FC = () => {
           },
           async () => {
             const data = await getDailyInsight();
+            setWeather(null);
             setQuote(data.quote || null);
             setHistory(data.history || null);
             setLoading(false);
-          }
+          },
+          { timeout: 5000 }
         );
       } else {
         const data = await getDailyInsight();
@@ -60,7 +62,7 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
-      setError("데이터를 불러오는 중 오류가 발생했습니다.");
+      setError("AI 데이터를 가져오는 데 실패했습니다.");
       setLoading(false);
     }
   }, []);
@@ -69,7 +71,6 @@ const App: React.FC = () => {
     refreshAI();
   }, [refreshAI]);
 
-  // Handlers
   const actions = {
     toggleSchedule: (id: string) => {
       const today = new Date().toISOString().split('T')[0];
@@ -119,30 +120,30 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen max-h-screen">
-      <header className="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0">
-        <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <CalendarIcon className="w-5 h-5 text-white" />
+    <div className="flex flex-col h-full bg-slate-50">
+      <header className="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0 shadow-sm z-10">
+        <h1 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <div className="w-7 h-7 bg-blue-600 rounded flex items-center justify-center">
+            <CalendarIcon className="w-4 h-4 text-white" />
           </div>
           AI Dashboard
         </h1>
-        <button onClick={refreshAI} disabled={loading} className="p-2 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50">
-          <RefreshCwIcon className={`w-5 h-5 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
+        <button onClick={refreshAI} disabled={loading} className="p-1.5 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50">
+          <RefreshCwIcon className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 bg-slate-50">
+      <main className="flex-1 overflow-y-auto p-4">
         {error ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <AlertCircleIcon className="w-12 h-12 text-red-400 mb-4" />
-            <p className="text-slate-600 font-medium">{error}</p>
-            <button onClick={refreshAI} className="mt-4 text-blue-600 font-bold">다시 시도</button>
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <AlertCircleIcon className="w-10 h-10 text-red-400 mb-2" />
+            <p className="text-slate-600 text-sm font-medium">{error}</p>
+            <button onClick={refreshAI} className="mt-4 text-blue-600 text-sm font-bold">다시 시도</button>
           </div>
         ) : loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-            <p className="animate-pulse">AI가 정보를 분석하고 있습니다...</p>
+          <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+            <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-xs animate-pulse">AI가 데이터를 분석하고 있습니다...</p>
           </div>
         ) : (
           <Dashboard 
@@ -156,7 +157,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <nav className="bg-white border-t flex items-center justify-around py-2 shrink-0">
+      <nav className="bg-white border-t flex items-center justify-around py-2 shrink-0 shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
         <NavButton active={activeTab === 'home'} onClick={() => setActiveTab('home')} icon={<CloudIcon />} label="홈" />
         <NavButton active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} icon={<CalendarIcon />} label="일정" />
         <NavButton active={activeTab === 'memo'} onClick={() => setActiveTab('memo')} icon={<StickyNoteIcon />} label="메모" />
@@ -166,11 +167,9 @@ const App: React.FC = () => {
   );
 };
 
-// NavButton component with fix for icon size prop
 const NavButton: React.FC<{ active: boolean, onClick: () => void, icon: React.ReactElement, label: string }> = ({ active, onClick, icon, label }) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all px-4 py-1 rounded-lg ${active ? 'text-blue-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
-    {/* Fix: Added type cast to React.ReactElement<any> to resolve the property check error for 'size' */}
-    {React.cloneElement(icon as React.ReactElement<any>, { size: 22 })}
+  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all px-3 py-1 rounded-lg ${active ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>
+    {React.cloneElement(icon as React.ReactElement<any>, { size: 20 })}
     <span className="text-[10px] font-bold">{label}</span>
   </button>
 );
