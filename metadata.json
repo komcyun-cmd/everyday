@@ -1,0 +1,7 @@
+{
+  "name": "Edge AI Daily Dashboard",
+  "description": "A comprehensive productivity dashboard featuring weather, quotes, historical facts, recurring schedules, memos, and goal tracking powered by Gemini AI.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
