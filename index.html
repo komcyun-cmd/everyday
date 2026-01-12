@@ -5,10 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Daily Dashboard</title>
-    <script>
-        // process 환경 변수 모킹 (확장 프로그램 환경 에러 방지)
-        window.process = { env: { API_KEY: "" } };
-    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <style>
         body {
@@ -43,7 +39,10 @@
 <body>
     <div id="root">
         <div class="flex items-center justify-center h-screen text-slate-400">
-            <p>애플리케이션을 초기화 중입니다...</p>
+            <div class="text-center">
+                <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p>애플리케이션을 초기화 중입니다...</p>
+            </div>
         </div>
     </div>
     <script type="module" src="index.tsx"></script>

@@ -2,20 +2,22 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { WeatherData, HistoryEvent, Quote } from "../types";
 
-// getDailyInsight handles fetching daily content using Gemini API
 export const getDailyInsight = async (lat?: number, lon?: number): Promise<{
   weather?: WeatherData;
   quote?: Quote;
   history?: HistoryEvent;
 }> => {
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    console.error("API Key가 설정되지 않았습니다.");
+    return {};
+  }
+
   try {
-    // ALWAYS use direct initialization with process.env.API_KEY
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     const dateStr = new Date().toLocaleDateString();
 
-    // parallel execution for performance
-    // Note: googleSearch is removed here because JSON parsing is required for structured UI data,
-    // and guidelines prohibit parsing search results as JSON.
     const [quoteRes, historyRes] = await Promise.all([
       ai.models.generateContent({
         model: "gemini-3-flash-preview",
