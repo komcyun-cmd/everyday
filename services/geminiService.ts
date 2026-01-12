@@ -1,74 +1,103 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { WeatherData, HistoryEvent, Quote } from "../types";
 
-// Extensions might handle process.env differently, fallback to a global if necessary
-const getApiKey = () => {
-  try {
-    return process.env.API_KEY || (window as any).API_KEY;
-  } catch (e) {
-    return "";
-  }
-};
-
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
-
+// getDailyInsight handles fetching daily content using Gemini API
 export const getDailyInsight = async (lat?: number, lon?: number): Promise<{
   weather?: WeatherData;
   quote?: Quote;
   history?: HistoryEvent;
 }> => {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    console.warn("API Key is missing. Please ensure it is configured.");
-  }
-
-  const dateStr = new Date().toLocaleDateString();
-  
   try {
-    // 1. Get Quote (Fast)
-    const quoteResponse = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: "Give me one inspiring quote for today in Korean. Format as JSON: { \"text\": \"...\", \"author\": \"...\" }",
-      config: { responseMimeType: "application/json" }
-    });
-    const quote = JSON.parse(quoteResponse.text || "{}");
+    // ALWAYS use direct initialization with process.env.API_KEY
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const dateStr = new Date().toLocaleDateString();
 
-    // 2. Get Weather
+    // parallel execution for performance
+    // Note: googleSearch is removed here because JSON parsing is required for structured UI data,
+    // and guidelines prohibit parsing search results as JSON.
+    const [quoteRes, historyRes] = await Promise.all([
+      ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: "Give me one inspiring quote for today in Korean.",
+        config: { 
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              text: { type: Type.STRING },
+              author: { type: Type.STRING }
+            },
+            required: ["text", "author"]
+          }
+        }
+      }),
+      ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `오늘(${dateStr})은 역사적으로 어떤 중요한 일이 있었나요? 한국어로 응답하세요.`,
+        config: { 
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              year: { type: Type.STRING },
+              event: { type: Type.STRING },
+              description: { type: Type.STRING },
+              sources: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    uri: { type: Type.STRING }
+                  },
+                  required: ["title", "uri"]
+                }
+              }
+            },
+            required: ["year", "event", "description", "sources"]
+          }
+        }
+      })
+    ]);
+
     let weather: WeatherData | undefined;
     if (lat && lon) {
-      const weatherPrompt = `What is the current weather at latitude ${lat}, longitude ${lon}? Provide temperature in Celsius, condition, and location name. Return as JSON: { "temp": number, "condition": "sunny/cloudy/rainy...", "location": "City Name", "description": "short description" }`;
-      const weatherResponse = await ai.models.generateContent({
+      const weatherRes = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: weatherPrompt,
-        config: { tools: [{ googleSearch: {} }] }
+        contents: `Current weather at latitude ${lat}, longitude ${lon}.`,
+        config: { 
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              temp: { type: Type.NUMBER },
+              condition: { type: Type.STRING },
+              location: { type: Type.STRING },
+              description: { type: Type.STRING }
+            },
+            required: ["temp", "condition", "location", "description"]
+          }
+        }
       });
-      const match = weatherResponse.text.match(/\{.*\}/s);
-      if (match) weather = JSON.parse(match[0]);
+      try {
+        const wText = weatherRes.text;
+        if (wText) {
+          weather = JSON.parse(wText);
+        }
+      } catch (e) { console.error("Weather parse error", e); }
     }
 
-    // 3. History Today
-    let history: HistoryEvent | undefined;
-    const historyPrompt = `오늘(${dateStr})은 역사적으로 어떤 중요한 일이 있었나요? 가장 중요한 사건 하나만 알려주세요. 연도와 사건 설명을 포함해 JSON으로 응답하세요: { "year": "연도", "event": "사건명", "description": "간략한 설명" }`;
-    const historyResponse = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: historyPrompt,
-      config: { tools: [{ googleSearch: {} }] }
-    });
-    
-    const hMatch = historyResponse.text.match(/\{.*\}/s);
-    if (hMatch) {
-      history = JSON.parse(hMatch[0]);
-      const sources = historyResponse.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-      history!.sources = sources.map((c: any) => ({
-        title: c.web?.title || "출처",
-        uri: c.web?.uri || "#"
-      })).filter((s: any) => s.uri !== "#");
-    }
+    const qText = quoteRes.text;
+    const hText = historyRes.text;
 
-    return { weather, quote, history };
+    return {
+      quote: qText ? JSON.parse(qText) : undefined,
+      history: hText ? JSON.parse(hText) : undefined,
+      weather
+    };
   } catch (error) {
-    console.error("AI Insight Error:", error);
+    console.error("Gemini API Error:", error);
     return {};
   }
 };

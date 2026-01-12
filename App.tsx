@@ -6,24 +6,25 @@ import Dashboard from './components/Dashboard';
 import { 
   CloudIcon, 
   CalendarIcon, 
-  BookOpenIcon, 
   StickyNoteIcon, 
   TargetIcon, 
   RefreshCwIcon,
-  PlusIcon
+  AlertCircleIcon
 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'memo' | 'goals'>('home');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [history, setHistory] = useState<HistoryEvent | null>(null);
   
-  // App State persistent storage
   const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('app_state');
-    if (saved) return JSON.parse(saved);
+    try {
+      const saved = localStorage.getItem('app_state');
+      if (saved) return JSON.parse(saved);
+    } catch (e) { console.error("LocalStorage error", e); }
     return { schedules: [], memos: [], goals: [] };
   });
 
@@ -33,24 +34,33 @@ const App: React.FC = () => {
 
   const refreshAI = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const data = await getDailyInsight(pos.coords.latitude, pos.coords.longitude);
-          setWeather(data.weather || null);
-          setQuote(data.quote || null);
-          setHistory(data.history || null);
-          setLoading(false);
-        },
-        async () => {
-          const data = await getDailyInsight();
-          setQuote(data.quote || null);
-          setHistory(data.history || null);
-          setLoading(false);
-        }
-      );
-    } catch (error) {
-      console.error(error);
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const data = await getDailyInsight(pos.coords.latitude, pos.coords.longitude);
+            setWeather(data.weather || null);
+            setQuote(data.quote || null);
+            setHistory(data.history || null);
+            setLoading(false);
+          },
+          async () => {
+            const data = await getDailyInsight();
+            setQuote(data.quote || null);
+            setHistory(data.history || null);
+            setLoading(false);
+          }
+        );
+      } else {
+        const data = await getDailyInsight();
+        setQuote(data.quote || null);
+        setHistory(data.history || null);
+        setLoading(false);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError("데이터를 불러오는 중 오류가 발생했습니다.");
       setLoading(false);
     }
   }, []);
@@ -59,108 +69,80 @@ const App: React.FC = () => {
     refreshAI();
   }, [refreshAI]);
 
-  // Actions
-  const addSchedule = (title: string, time: string, recurrence: Recurrence) => {
-    const newItem: ScheduleItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      title,
-      time,
-      recurrence,
-      completedDates: []
-    };
-    setState(prev => ({ ...prev, schedules: [...prev.schedules, newItem] }));
-  };
-
-  const toggleSchedule = (id: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    setState(prev => ({
-      ...prev,
-      schedules: prev.schedules.map(s => {
-        if (s.id !== id) return s;
-        const isCompleted = s.completedDates.includes(today);
-        return {
-          ...s,
-          completedDates: isCompleted 
-            ? s.completedDates.filter(d => d !== today)
-            : [...s.completedDates, today]
-        };
-      })
-    }));
-  };
-
-  const removeSchedule = (id: string) => {
-    setState(prev => ({ ...prev, schedules: prev.schedules.filter(s => s.id !== id) }));
-  };
-
-  const addMemo = (content: string) => {
-    const newMemo: Memo = {
-      id: Math.random().toString(36).substr(2, 9),
-      content,
-      updatedAt: Date.now()
-    };
-    setState(prev => ({ ...prev, memos: [newMemo, ...prev.memos] }));
-  };
-
-  const removeMemo = (id: string) => {
-    setState(prev => ({ ...prev, memos: prev.memos.filter(m => m.id !== id) }));
-  };
-
-  const updateGoal = (goalId: string, value: number) => {
-    const today = new Date().toISOString().split('T')[0];
-    setState(prev => ({
-      ...prev,
-      goals: prev.goals.map(g => {
-        if (g.id !== goalId) return g;
-        const existingEntryIdx = g.entries.findIndex(e => e.date === today);
-        const newEntries = [...g.entries];
-        if (existingEntryIdx > -1) {
-          newEntries[existingEntryIdx].value += value;
-        } else {
-          newEntries.push({ date: today, value });
-        }
-        return { ...g, entries: newEntries };
-      })
-    }));
-  };
-
-  const addGoal = (title: string, target: number, unit: string) => {
-    const newGoal: Goal = {
-      id: Math.random().toString(36).substr(2, 9),
-      title,
-      target,
-      unit,
-      entries: []
-    };
-    setState(prev => ({ ...prev, goals: [...prev.goals, newGoal] }));
-  };
-
-  const removeGoal = (id: string) => {
-    setState(prev => ({ ...prev, goals: prev.goals.filter(g => g.id !== id) }));
+  // Handlers
+  const actions = {
+    toggleSchedule: (id: string) => {
+      const today = new Date().toISOString().split('T')[0];
+      setState(prev => ({
+        ...prev,
+        schedules: prev.schedules.map(s => {
+          if (s.id !== id) return s;
+          const isCompleted = s.completedDates.includes(today);
+          return {
+            ...s,
+            completedDates: isCompleted 
+              ? s.completedDates.filter(d => d !== today)
+              : [...s.completedDates, today]
+          };
+        })
+      }));
+    },
+    removeSchedule: (id: string) => setState(prev => ({ ...prev, schedules: prev.schedules.filter(s => s.id !== id) })),
+    addSchedule: (title: string, time: string, recurrence: Recurrence) => {
+      const newItem: ScheduleItem = { id: Math.random().toString(36).substr(2, 9), title, time, recurrence, completedDates: [] };
+      setState(prev => ({ ...prev, schedules: [...prev.schedules, newItem] }));
+    },
+    addMemo: (content: string) => {
+      const newMemo: Memo = { id: Math.random().toString(36).substr(2, 9), content, updatedAt: Date.now() };
+      setState(prev => ({ ...prev, memos: [newMemo, ...prev.memos] }));
+    },
+    removeMemo: (id: string) => setState(prev => ({ ...prev, memos: prev.memos.filter(m => m.id !== id) })),
+    updateGoal: (goalId: string, value: number) => {
+      const today = new Date().toISOString().split('T')[0];
+      setState(prev => ({
+        ...prev,
+        goals: prev.goals.map(g => {
+          if (g.id !== goalId) return g;
+          const idx = g.entries.findIndex(e => e.date === today);
+          const newEntries = [...g.entries];
+          if (idx > -1) newEntries[idx].value += value;
+          else newEntries.push({ date: today, value });
+          return { ...g, entries: newEntries };
+        })
+      }));
+    },
+    addGoal: (title: string, target: number, unit: string) => {
+      const newGoal: Goal = { id: Math.random().toString(36).substr(2, 9), title, target, unit, entries: [] };
+      setState(prev => ({ ...prev, goals: [...prev.goals, newGoal] }));
+    },
+    removeGoal: (id: string) => setState(prev => ({ ...prev, goals: prev.goals.filter(g => g.id !== id) }))
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <header className="bg-white border-b px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+    <div className="flex flex-col h-screen max-h-screen">
+      <header className="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0">
         <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-          <CalendarIcon className="w-6 h-6 text-blue-600" />
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <CalendarIcon className="w-5 h-5 text-white" />
+          </div>
           AI Dashboard
         </h1>
-        <button 
-          onClick={refreshAI} 
-          disabled={loading}
-          className="p-2 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50"
-        >
+        <button onClick={refreshAI} disabled={loading} className="p-2 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50">
           <RefreshCwIcon className={`w-5 h-5 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4 space-y-4">
-        {loading ? (
+      <main className="flex-1 overflow-y-auto p-4 bg-slate-50">
+        {error ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <AlertCircleIcon className="w-12 h-12 text-red-400 mb-4" />
+            <p className="text-slate-600 font-medium">{error}</p>
+            <button onClick={refreshAI} className="mt-4 text-blue-600 font-bold">다시 시도</button>
+          </div>
+        ) : loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <RefreshCwIcon className="w-10 h-10 animate-spin mb-4" />
-            <p>AI가 정보를 가져오고 있습니다...</p>
+            <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <p className="animate-pulse">AI가 정보를 분석하고 있습니다...</p>
           </div>
         ) : (
           <Dashboard 
@@ -169,17 +151,12 @@ const App: React.FC = () => {
             quote={quote}
             history={history}
             state={state}
-            actions={{
-              toggleSchedule, removeSchedule, addSchedule,
-              addMemo, removeMemo,
-              updateGoal, addGoal, removeGoal
-            }}
+            actions={actions}
           />
         )}
       </main>
 
-      {/* Navigation */}
-      <nav className="bg-white border-t flex items-center justify-around py-2 sticky bottom-0 z-10">
+      <nav className="bg-white border-t flex items-center justify-around py-2 shrink-0">
         <NavButton active={activeTab === 'home'} onClick={() => setActiveTab('home')} icon={<CloudIcon />} label="홈" />
         <NavButton active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} icon={<CalendarIcon />} label="일정" />
         <NavButton active={activeTab === 'memo'} onClick={() => setActiveTab('memo')} icon={<StickyNoteIcon />} label="메모" />
@@ -189,16 +166,12 @@ const App: React.FC = () => {
   );
 };
 
-// Fix for Line 197: Use React.isValidElement and cast to ReactElement with explicit props to safely clone and apply className
-const NavButton: React.FC<{ active: boolean, onClick: () => void, icon: React.ReactNode, label: string }> = ({ active, onClick, icon, label }) => (
-  <button 
-    onClick={onClick}
-    className={`flex flex-col items-center gap-1 transition-colors px-4 py-1 rounded-lg ${active ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-  >
-    {React.isValidElement(icon) 
-      ? React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: 'w-6 h-6' }) 
-      : icon}
-    <span className="text-xs font-medium">{label}</span>
+// NavButton component with fix for icon size prop
+const NavButton: React.FC<{ active: boolean, onClick: () => void, icon: React.ReactElement, label: string }> = ({ active, onClick, icon, label }) => (
+  <button onClick={onClick} className={`flex flex-col items-center gap-1 transition-all px-4 py-1 rounded-lg ${active ? 'text-blue-600 scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
+    {/* Fix: Added type cast to React.ReactElement<any> to resolve the property check error for 'size' */}
+    {React.cloneElement(icon as React.ReactElement<any>, { size: 22 })}
+    <span className="text-[10px] font-bold">{label}</span>
   </button>
 );
 
