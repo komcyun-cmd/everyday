@@ -4,6 +4,7 @@ export interface WeatherData {
   condition: string;
   location: string;
   description: string;
+  sources?: { title: string; uri: string }[];
 }
 
 export interface HistoryEvent {

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'https://esm.sh/react@19.0.0';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getDailyInsight } from './services/geminiService';
 import { AppState, WeatherData, Quote, HistoryEvent, ScheduleItem, Memo, Goal, Recurrence } from './types';
 import Dashboard from './components/Dashboard';
@@ -11,7 +11,7 @@ import {
   RefreshCwIcon,
   AlertCircleIcon,
   LayoutDashboardIcon
-} from 'https://esm.sh/lucide-react@0.446.0';
+} from 'lucide-react';
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -122,7 +122,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Desktop Sidebar / Mobile Nav */}
       <aside className="w-full md:w-64 bg-white border-r border-slate-200 shrink-0 z-20">
         <div className="p-6 flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
@@ -132,25 +131,20 @@ const App: React.FC = () => {
         </div>
 
         <nav className="px-4 py-2 space-y-1">
-          <SidebarLink active={activeTab === 'home'} onClick={() => setActiveTab('home')} icon={<LayoutDashboardIcon />} label="대시보드" />
-          <SidebarLink active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} icon={<CalendarIcon />} label="내 일정" />
-          <SidebarLink active={activeTab === 'memo'} onClick={() => setActiveTab('memo')} icon={<StickyNoteIcon />} label="간편 메모" />
-          <SidebarLink active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon={<TargetIcon />} label="목표 추적" />
+          <SidebarLink active={activeTab === 'home'} onClick={() => setActiveTab('home')} icon={<LayoutDashboardIcon size={20} />} label="대시보드" />
+          <SidebarLink active={activeTab === 'schedule'} onClick={() => setActiveTab('schedule')} icon={<CalendarIcon size={20} />} label="내 일정" />
+          <SidebarLink active={activeTab === 'memo'} onClick={() => setActiveTab('memo')} icon={<StickyNoteIcon size={20} />} label="간편 메모" />
+          <SidebarLink active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} icon={<TargetIcon size={20} />} label="목표 추적" />
         </nav>
 
         <div className="mt-auto p-6 md:absolute md:bottom-0 md:w-64 border-t border-slate-100">
-          <button 
-            onClick={refreshAI} 
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl transition-all disabled:opacity-50"
-          >
+          <button onClick={refreshAI} disabled={loading} className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl transition-all disabled:opacity-50">
             <RefreshCwIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             AI 브리핑 새로고침
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-[#f8fafc] p-4 md:p-8">
         <div className="max-w-5xl mx-auto">
           {error ? (
@@ -166,19 +160,10 @@ const App: React.FC = () => {
                 <div className="w-20 h-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
                 <div className="absolute inset-0 flex items-center justify-center text-blue-600 font-bold">AI</div>
               </div>
-              <p className="mt-8 text-slate-500 font-medium animate-pulse text-lg text-center">
-                오늘의 통찰과 데이터를 불러오고 있습니다...
-              </p>
+              <p className="mt-8 text-slate-500 font-medium animate-pulse text-lg text-center">오늘의 통찰과 데이터를 불러오고 있습니다...</p>
             </div>
           ) : (
-            <Dashboard 
-              activeTab={activeTab}
-              weather={weather}
-              quote={quote}
-              history={history}
-              state={state}
-              actions={actions}
-            />
+            <Dashboard activeTab={activeTab} weather={weather} quote={quote} history={history} state={state} actions={actions} />
           )}
         </div>
       </main>
@@ -186,16 +171,9 @@ const App: React.FC = () => {
   );
 };
 
-const SidebarLink: React.FC<{ active: boolean, onClick: () => void, icon: React.ReactElement, label: string }> = ({ active, onClick, icon, label }) => (
-  <button 
-    onClick={onClick} 
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-      active 
-        ? 'bg-blue-50 text-blue-600 shadow-sm' 
-        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-    }`}
-  >
-    {React.cloneElement(icon as React.ReactElement<any>, { size: 20 })}
+const SidebarLink: React.FC<{ active: boolean, onClick: () => void, icon: React.ReactNode, label: string }> = ({ active, onClick, icon, label }) => (
+  <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${active ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+    {icon}
     <span>{label}</span>
   </button>
 );

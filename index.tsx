@@ -1,6 +1,6 @@
 
-import React from 'https://esm.sh/react@19.0.0';
-import ReactDOM from 'https://esm.sh/react-dom@19.0.0/client';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import App from './App';
 
 // 배포 환경의 process.env.API_KEY를 보존하면서 모킹
